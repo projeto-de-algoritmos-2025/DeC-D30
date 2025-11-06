@@ -1,4 +1,4 @@
-import math
+import math # Cálculo do teto para índices de listas com tamanho ímpar
 
 # Retorna a mediana com base no algorito de Mediana das Medianas (MoM)
 def median_of_medians(values):
@@ -25,12 +25,3 @@ def median_of_medians(values):
             k -= (len(l) + 1)
         else:
             return m
-
-
-# Retorna o nome da mediana em um dicionário {nome: coordenada}
-def median_point(points):
-    x_values = [point[0] for point in points.values()] # Obtém as abscissas do plano
-    x_median = median_of_medians(x_values) # Obtém a mediana das abscissas
-
-    median_name = [name for name in points.keys() if points[name][0] == x_median] # Separa nomes de pontos com x = mediana
-    return median_name[0] # Retorna o nome do primeiro elemento com x = mediana

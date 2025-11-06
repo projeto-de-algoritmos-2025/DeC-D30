@@ -34,6 +34,7 @@ Abaixo, estão *screenshots* demonstrando um exemplo do funcionamento do sistema
 - **Linguagem**: *Python*
 - **Bibliotecas**:
     - *tkinter* (nativa do *Python*)
+    - *math* (nativa do *Python*)
 
 <br>
 
