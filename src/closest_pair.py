@@ -4,17 +4,17 @@ import math # Cálculo de distância euclidiana
 
 # Retorna o nome da mediana em um dicionário {nome: coordenada}
 def median(points):
-    x_values = [point[0] for point in points.values()] # Obtém as abscissas do plano
+    x_values = [point[1][0] for point in points] # Obtém as abscissas do plano
     x_median = median_of_medians(x_values) # Obtém a mediana das abscissas
 
-    median_name = [name for name in points.keys() if points[name][0] == x_median] # Separa nomes de pontos com x = mediana
+    median_name = [point[0] for point in points if point[1][0] == x_median] # Separa nomes de pontos com x = mediana
     return median_name[0], x_median # Retorna o nome do primeiro elemento com x = mediana
 
 
 # Divide um conjunto de pontos com base na mediana (l <= m < r)
 def divide(points, m):
-    left = dict([pair for pair in points.items() if pair[1][0] <= m])
-    right = dict([pair for pair in points.items() if pair[1][0] > m])
+    left = [point for point in points if point[1][0] <= m]
+    right = [point for point in points if point[1][0] > m]
     
     return left, right
 
@@ -58,9 +58,9 @@ def distances(points, closest):
 
 
 # Sequência de passos do algoritmo recursivo
-def execution(points, closest=[float('inf'), (None, None)]):
+def execution(points, closest=[float('inf'), {(None, None)}]):
     # Condição de parada do algoritmo: left/right com tamanho nulo ou unitário
-    if(len(points)==0 or len(points)==1): return list(points.items())
+    if(len(points)==0 or len(points)==1): return points
     
     # Encontrar a mediana e dividir
     m, m_value = median(points)
@@ -88,7 +88,7 @@ with open('./db/database.json', 'r') as file:
 
 closest = [float('inf'), {(None, None)}]
 
-execution(points, closest)
+execution(list(points.items()), closest)
 
 print(closest)
 '''
