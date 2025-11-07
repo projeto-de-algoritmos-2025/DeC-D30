@@ -2,6 +2,7 @@ from tkinter import messagebox, simpledialog
 import tkinter as tk
 import random
 import json
+import os
 
 
 class App():
@@ -214,6 +215,7 @@ class App():
 
     def on_save(self):
         try:
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
             with open(self.db_path, 'w') as file:
                 json.dump(self.points, file, ensure_ascii=False, indent=4)
             messagebox.showinfo('Pontos salvos', f'Os pontos foram salvos no arquivo "{self.db_path}".')
