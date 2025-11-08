@@ -117,7 +117,6 @@ class App():
         
         canvas_x, canvas_y = (event.x, event.y) if event else (self.w, self.h)
         x, y, name = (canvas_x-self.w), (self.h-canvas_y), self.default_name()
-
         self.edit_window(x, y, name, 'add', event)
         
 
@@ -175,9 +174,12 @@ class App():
 
     def add_point(self, x, y, new_name, old_name, win):
         if not self.verify_point(x, y, new_name, old_name, win): return
-        x = int(x) if float(x).is_integer() else float(x) # Elimina casas decimais se for um int
-        y = int(y) if float(y).is_integer() else float(y) # Elimina casas decimais se for um int
+        x, y = float(x), float(y)
 
+        if x.is_integer(): x = int(x) # Elimina casas decimais se for um int
+        if y.is_integer(): y = int(y) # Elimina casas decimais se for um int
+
+        # Deleta a versão antiga do ponto, se estiver editando
         if old_name:
             string = 'editado'
             self.canvas.delete(self.ids[old_name][0]), self.canvas.delete(self.ids[old_name][1])
@@ -287,11 +289,9 @@ class App():
         try:
             with open(self.db_path, 'r') as file:
                 self.points = json.load(file)
-
             for point in self.points.items():
                 point_id, text_id = self.plot(point[1][0], point[1][1], point[0])
                 self.ids[point[0]] = [point_id, text_id]
-
             messagebox.showinfo('Carregamento concluído', f'Os pontos foram carregados no plano!')
 
         except Exception:
@@ -306,7 +306,7 @@ class App():
 
 
     # Checa se já existe um ponto nessas coordenadas
-    def check_conflict(self, x, y, old_name):
+    def check_conflict(self, x, y, old_name=None):
         same_point = True if not old_name else (x!=self.points[old_name][0] or y!=self.points[old_name][1])
         return ([x, y] in self.points.values()) and (same_point)
 
