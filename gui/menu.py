@@ -215,6 +215,10 @@ class App():
             scrollbar.grid(row=1, column=1, pady=5, sticky='nse')
             listbox.configure(yscrollcommand=scrollbar.set)
 
+            def alph_order():
+                self.points = dict(sorted(self.points.items(), key=lambda item: item[0]))
+                refresh_points()
+
             def select_all():
                 if len(listbox.curselection()) == len(self.points): listbox.select_clear(0, tk.END)
                 else: listbox.select_set(0, tk.END)
@@ -240,7 +244,8 @@ class App():
                 refresh_points()
 
             tk.Label(frame, text='Selecione o(s) ponto(s)\npara remoção:').grid(row=0, column=0, columnspan=2)
-            tk.Button(frame, text="A", font=("Arial", 8), width=1, height=1, command=select_all).place(x=1, y=28, width=14, height=14)
+            tk.Button(frame, text="A", font=("Arial", 8), width=1, height=1, command=alph_order).place(x=1, y=28, width=14, height=14)
+            tk.Button(frame, text="S", font=("Arial", 8), width=1, height=1, command=select_all).place(x=16, y=28, width=14, height=14)
             tk.Button(frame, text="Remover", width=10, command=delete_points).grid(row=2, column=0, sticky='sw')
             tk.Button(frame, text="Voltar", width=10, command=win.destroy).grid(row=2, column=1, sticky='se')
 
@@ -253,6 +258,9 @@ class App():
 
     def on_gen(self):
         n = simpledialog.askinteger('Gerar Pontos', 'Número de pontos:')
+        if n<0:
+            messagebox.showerror('Erro', f'O número de pontos não pode ser negativo!')
+            return
         if (len(self.points)+n) > self.max:
             messagebox.showerror('Erro', f'Número máximo de pontos ({self.max}) estourado!')
             return
@@ -301,8 +309,8 @@ class App():
 
     # Gera um nome "default" para um ponto
     def default_name(self, i = 1):
-        while f'Ponto {i}' in self.points.keys(): i += 1
-        return f'Ponto {i}'
+        while f'Ponto {i:02}' in self.points.keys(): i += 1
+        return f'Ponto {i:02}'
 
 
     # Checa se já existe um ponto nessas coordenadas
