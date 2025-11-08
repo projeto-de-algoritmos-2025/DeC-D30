@@ -5,6 +5,54 @@ import json
 import os
 
 
+
+class Main():
+    def __init__(self, root, db_path, w=1000, h=600, g=50, max=1000):
+        self.root = root
+        self.db_path, self.max = tk.StringVar(value=db_path), tk.StringVar(value=max)
+        self.w, self.h, self.g = tk.StringVar(value=w), tk.StringVar(value=h), tk.StringVar(value=g)
+        
+        self.root.resizable(False, False)
+        self.root.title("PairView")
+        self.frame = tk.Frame(self.root, padx=8, pady=8)
+        self.frame.pack()
+
+        def validate_num(string): return (string.isdigit() or not string)
+        val_num = self.root.register(validate_num)
+
+        tk.Label(self.frame, text="Bem Vindo(a) ao\nPairView!", font='sylfaen').grid(row=0, column=0, columnspan=2, pady=(0, 6))
+        tk.Label(self.frame, text="Path do JSON:").grid(row=1, column=0, columnspan=2, sticky='w')
+        tk.Label(self.frame, text="Largura do Plano:").grid(row=3, column=0, columnspan=2, sticky='w')
+        tk.Label(self.frame, text="Altura do Plano:").grid(row=5, column=0, columnspan=2, sticky='w')
+        tk.Label(self.frame, text="Tamanho da Grade:").grid(row=7, column=0, columnspan=2, sticky='w')
+        tk.Label(self.frame, text="Máximo de Pontos:").grid(row=9, column=0, columnspan=2, sticky='w')
+
+        tk.Entry(self.frame, textvariable=self.db_path).grid(row=2, column=0, columnspan=2)
+        tk.Entry(self.frame, textvariable=self.w, validate="key", validatecommand=(val_num, "%P")) \
+            .grid(row=4, column=0, columnspan=2)
+        tk.Entry(self.frame, textvariable=self.h, validate="key", validatecommand=(val_num, "%P")) \
+            .grid(row=6, column=0, columnspan=2)
+        tk.Entry(self.frame, textvariable=self.g, validate="key", validatecommand=(val_num, "%P")) \
+            .grid(row=8, column=0, columnspan=2)
+        tk.Entry(self.frame, textvariable=self.max, validate="key", validatecommand=(val_num, "%P")) \
+            .grid(row=10, column=0, columnspan=2)
+
+        tk.Button(self.frame, text='Iniciar', width=8, command=self.start) \
+            .grid(row=11, column=0, pady=(10, 0), sticky='sw')
+        tk.Button(self.frame, text="Sair", width=8, command=self.root.destroy) \
+            .grid(row=11, column=1, pady=(10, 0), sticky='se')
+        
+    def start(self):
+        try:
+            db_path, max = self.db_path.get(), int(self.max.get())
+            width, height, grid = int(self.w.get()), int(self.h.get()), int(self.g.get())
+            App(self.root, db_path, width, height, grid, max)
+            self.frame.destroy()
+        except Exception:
+            return not messagebox.showerror('Erro', f'Ocorreu um erro.')
+
+
+
 class App():
     def __init__(self, root, db_path, w=1000, h=600, g=50, max=1000):
         self.root = root
@@ -13,9 +61,7 @@ class App():
         self.max = max
         self.points, self.ids = {}, {}
 
-        self.root.resizable(False, False)
-        self.root.title("PairView")
-        frame = tk.Frame(root, padx=15, pady=10)
+        frame = tk.Frame(self.root, padx=15, pady=10)
         frame.pack()
         
         # Plota o canvas e linhas/textos de referência
@@ -50,8 +96,8 @@ class App():
         btn_gen = tk.Button(frame, text="Gerar Pontos", width=31, command=self.on_gen)
         btn_save = tk.Button(frame, text="Salvar em JSON", width=15, command=self.on_save)
         btn_load = tk.Button(frame, text="Carregar JSON", width=15, command=self.on_load)
-        btn_start = tk.Button(frame, text="Iniciar Algoritmo", width=30, command=self.on_start)
-        btn_exit = tk.Button(frame, text="Sair", width=30, command=self.root.destroy)
+        btn_start = tk.Button(frame, text="Iniciar Algoritmo", width=31, command=self.on_start)
+        btn_exit = tk.Button(frame, text="Sair", width=31, command=self.root.destroy)
 
         # Ajuste dos elementos no grid
         title.grid(row=0, column=1, sticky='n')
@@ -60,8 +106,8 @@ class App():
         btn_gen.grid(row=5, column=0, padx=1,pady=5, sticky='w')
         btn_save.grid(row=6, column=0, pady=5, sticky='w')
         btn_load.grid(row=6, column=0, padx=114, pady=5, sticky='w')
-        btn_start.grid(row=4, column=2, padx=5, pady=5)
-        btn_exit.grid(row=6, column=2, padx=5, pady=5)
+        btn_start.grid(row=4, column=2, padx=5, pady=5, sticky='e')
+        btn_exit.grid(row=6, column=2, padx=5, pady=5, sticky='e')
 
     
     def on_add(self, event=None):
@@ -142,7 +188,7 @@ class App():
         self.points[new_name], self.ids[new_name] = [x, y], [point_id, text_id]
 
         win.destroy()
-        messagebox.showinfo(f'Ponto {string}', f'O ponto "{new_name}" foi {string} no plano.')
+        #messagebox.showinfo(f'Ponto {string}', f'O ponto "{new_name}" foi {string} no plano.')
 
 
     def on_rem(self, event=None):

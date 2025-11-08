@@ -1,4 +1,4 @@
-from gui.menu import App
+from gui.menu import Main
 import tkinter as tk
 
 
@@ -11,5 +11,5 @@ max_points = 1000
 
 if __name__ == '__main__':
     root = tk.Tk()
-    app = App(root, DB_FILE, w=board_width, h=board_height, g=board_grid, max=max_points)
+    app = Main(root, DB_FILE, w=board_width, h=board_height, g=board_grid, max=max_points)
     root.mainloop()
