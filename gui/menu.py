@@ -174,7 +174,7 @@ class App():
 
 
     def add_point(self, x, y, new_name, old_name, win):
-        if not self.verify_point(x, y, new_name, win): return
+        if not self.verify_point(x, y, new_name, old_name, win): return
         x = int(x) if float(x).is_integer() else float(x) # Elimina casas decimais se for um int
         y = int(y) if float(y).is_integer() else float(y) # Elimina casas decimais se for um int
 
@@ -306,8 +306,9 @@ class App():
 
 
     # Checa se já existe um ponto nessas coordenadas
-    def check_conflict(self, x, y):
-        return [x, y] in self.points.values()
+    def check_conflict(self, x, y, old_name):
+        same_point = True if not old_name else (x!=self.points[old_name][0] or y!=self.points[old_name][1])
+        return ([x, y] in self.points.values()) and (same_point)
 
 
     # Plota um ponto e seu texto no plano
@@ -322,16 +323,16 @@ class App():
 
 
     # Verifica se 'x', 'y' e 'name' são válidas no contexto do sistema
-    def verify_point(self, x, y, name, win):
+    def verify_point(self, x, y, name, old_name, win):
         try: x, y = float(x), float(y)
         except ValueError:
             return not messagebox.showwarning('Erro', f'Digite coordenadas válidas para o ponto.', parent=win)
 
-        if (-self.w > x > self.w) or (-self.h > y > self.h):
-            messagebox.showwarning('Erro', f'As coordenadas ({x}, {y}) estão fora do limite do plano.', parent=win)
-        elif self.check_conflict(x, y):
+        if self.check_conflict(x, y, old_name):
             messagebox.showwarning('Erro', f'O ponto ({x}, {y}) já existe no plano.', parent=win)
-        elif name in self.points.keys():
+        elif (-self.w > x > self.w) or (-self.h > y > self.h):
+            messagebox.showwarning('Erro', f'As coordenadas ({x}, {y}) estão fora do limite do plano.', parent=win)
+        elif (name in self.points.keys()) and (name!=old_name):
             messagebox.showwarning('Erro', f'Já existe um ponto com o nome "{name}".', parent=win)
         elif not name:
             messagebox.showwarning('Erro', f'Digite um nome válido para o ponto.', parent=win)
