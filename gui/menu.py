@@ -1,7 +1,10 @@
+from src.closest_pair import execution
 from tkinter import messagebox, simpledialog
 import tkinter as tk
+import threading
 import random
 import json
+import time
 import os
 
 
@@ -59,13 +62,14 @@ class App():
         self.db_path = db_path
         self.w, self.h, self.g = int(w/2), int(h/2), g
         self.max = max
+        self.speed = tk.IntVar(value=5)
         self.points, self.ids = {}, {}
 
-        frame = tk.Frame(self.root, padx=15, pady=10)
-        frame.pack()
+        self.frame = tk.Frame(self.root, padx=15, pady=10)
+        self.frame.pack()
         
         # Plota o canvas e linhas/textos de referência
-        self.canvas = tk.Canvas(frame, background='white', width=2*self.w, height=2*self.h)
+        self.canvas = tk.Canvas(self.frame, background='white', width=2*self.w, height=2*self.h)
         self.canvas.grid(row=1, column=0, columnspan=3, rowspan=3)
         self.canvas.create_line(0, self.h, 2*self.w, self.h, arrow=tk.LAST, width=2) # Eixo X
         self.canvas.create_line(self.w, 0, self.w, 2*self.h, arrow=tk.FIRST, width=2) # Eixo Y
@@ -90,24 +94,26 @@ class App():
         self.canvas.bind("<Button-3>", self.on_rem)
         
         # Demais elementos da interface
-        title = tk.Label(frame, text='idk')
-        btn_add = tk.Button(frame, text="Adicionar Ponto", width=15, command=self.on_add)
-        btn_rem = tk.Button(frame, text="Remover Ponto(s)", width=15, command=self.on_rem)
-        btn_gen = tk.Button(frame, text="Gerar Pontos", width=31, command=self.on_gen)
-        btn_save = tk.Button(frame, text="Salvar em JSON", width=15, command=self.on_save)
-        btn_load = tk.Button(frame, text="Carregar JSON", width=15, command=self.on_load)
-        btn_start = tk.Button(frame, text="Iniciar Algoritmo", width=31, command=self.on_start)
-        btn_exit = tk.Button(frame, text="Sair", width=31, command=self.root.destroy)
+        title = tk.Label(self.frame, text='idk')
+        self.buttons = [
+            tk.Button(self.frame, text="Adicionar Ponto", width=15, command=self.on_add),
+            tk.Button(self.frame, text="Remover Ponto(s)", width=15, command=self.on_rem),
+            tk.Button(self.frame, text="Gerar Pontos", width=31, command=self.on_gen),
+            tk.Button(self.frame, text="Salvar em JSON", width=15, command=self.on_save),
+            tk.Button(self.frame, text="Carregar JSON", width=15, command=self.on_load),
+            tk.Button(self.frame, text="Iniciar Algoritmo", width=31, command=self.on_start),
+            tk.Button(self.frame, text="Sair", width=31, command=self.root.destroy)
+        ]
 
         # Ajuste dos elementos no grid
         title.grid(row=0, column=1, sticky='n')
-        btn_add.grid(row=4, column=0, pady=5, sticky='w')
-        btn_rem.grid(row=4, column=0, padx=114, pady=5, sticky='w')
-        btn_gen.grid(row=5, column=0, padx=1,pady=5, sticky='w')
-        btn_save.grid(row=6, column=0, pady=5, sticky='w')
-        btn_load.grid(row=6, column=0, padx=114, pady=5, sticky='w')
-        btn_start.grid(row=4, column=2, padx=5, pady=5, sticky='e')
-        btn_exit.grid(row=6, column=2, padx=5, pady=5, sticky='e')
+        self.buttons[0].grid(row=4, column=0, pady=5, sticky='w')
+        self.buttons[1].grid(row=4, column=0, padx=(114, 0), pady=5, sticky='w')
+        self.buttons[2].grid(row=5, column=0, padx=(1, 0), pady=5, sticky='w')
+        self.buttons[3].grid(row=6, column=0, pady=5, sticky='w')
+        self.buttons[4].grid(row=6, column=0, padx=(114, 0), pady=5, sticky='w')
+        self.buttons[5].grid(row=4, column=2, pady=5, sticky='e')
+        self.buttons[6].grid(row=6, column=2, padx=(0, 1), pady=5, sticky='e')
 
     
     def on_add(self, event=None):
@@ -253,7 +259,32 @@ class App():
 
 
     def on_start(self):
-        pass
+        for button in self.buttons:
+            button.config(state="disabled")
+
+        self.canvas.unbind("<Button-1>")
+        self.canvas.unbind("<Button-2>")
+        self.canvas.unbind("<Button-3>")
+
+        self.buttons[5].destroy()
+        self.buttons[5] = [
+            tk.Label(self.frame, text='Velocidade', font=("Arial", 7)),
+            tk.Spinbox(self.frame, from_=0, to=10, textvariable=self.speed, state="normal", width=9),
+            tk.Button(self.frame, text="Pausar", width=9, command=self.pause),
+            tk.Button(self.frame, text="Interromper", width=9, command=self.stop)
+        ]
+
+        self.buttons[5][0].grid(row=4, column=2, padx=(0, 169), sticky='ne')
+        self.buttons[5][1].grid(row=4, column=2, padx=(0, 159), sticky='se')
+        self.buttons[5][2].grid(row=4, column=2, padx=(0, 80), sticky='e')
+        self.buttons[5][3].grid(row=4, column=2, padx=(0, 1), sticky='e')
+
+        self.pause_event = threading.Event()
+        self.pause_event.set()
+        self.stop_flag = False
+        
+        self.execution = threading.Thread(target=self.start)
+        self.execution.start()
 
 
     def on_gen(self):
@@ -369,3 +400,56 @@ class App():
         for point in self.points.items():
             if (x-5 <= point[1][0] <= x+5) and (y-5 <= point[1][1] <= y+5):
                 return point[0]
+
+
+    def start(self):
+        closest = [float('inf'), {(None, None)}]
+        self.temp_ids = {
+            "points": [],
+            "lines": [],
+            "closest": []
+        }
+
+        try:
+            #execution(points=list(self.points.items()),
+            #          closest=closest,
+            #          temp_ids=self.temp_ids,
+            #          response=[self.pause_event, self.stop_flag, self.speed])
+            print("w.i.p.")
+        except Exception: 
+            messagebox.showerror('Erro', f'Ocorreu um erro.')
+            return self.stop()
+        
+        self.buttons[5][3].config(text="Finalizar")
+
+
+    def pause(self):
+        if self.pause_event.is_set():
+            self.pause_event.clear()
+            self.buttons[5][2].config(text="Despausar")
+        else:
+            self.pause_event.set()
+            self.buttons[5][2].config(text="Pausar")
+
+
+    def stop(self):
+        self.stop_flag = True
+        self.pause_event.set()
+        time.sleep(0.4)
+
+        for key in self.temp_ids.keys():
+            for element in self.temp_ids[key]:
+                element.destroy()
+
+        for element in self.buttons[5]:
+            element.destroy()
+
+        self.buttons[5] = tk.Button(self.frame, text="Iniciar Algoritmo", width=31, command=self.on_start)
+        self.buttons[5].grid(row=4, column=2, pady=5, sticky='e')
+
+        self.canvas.bind("<Button-1>", self.on_add)
+        self.canvas.bind("<Button-2>", self.on_edit)
+        self.canvas.bind("<Button-3>", self.on_rem)
+
+        for button in self.buttons:
+            button.config(state="normal")

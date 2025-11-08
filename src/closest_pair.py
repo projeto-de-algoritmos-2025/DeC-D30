@@ -1,4 +1,5 @@
-from median_of_medians import median_of_medians
+try: from median_of_medians import median_of_medians
+except ModuleNotFoundError: from src.median_of_medians import median_of_medians
 import math # Cálculo de distância euclidiana
 
 
@@ -58,7 +59,7 @@ def distances(points, closest):
 
 
 # Sequência de passos do algoritmo recursivo
-def execution(points, closest=[float('inf'), {(None, None)}]):
+def execution(points, closest):
     # Condição de parada do algoritmo: left/right com tamanho nulo ou unitário
     if(len(points)==0 or len(points)==1): return points
     
