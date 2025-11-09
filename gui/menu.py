@@ -1,4 +1,4 @@
-from src.closest_pair import execution
+from src.closest_pair import ClosestPair
 from tkinter import messagebox, simpledialog
 import tkinter as tk
 import threading
@@ -409,17 +409,19 @@ class App():
             "lines": [],
             "closest": []
         }
-
-        try:
-            #execution(points=list(self.points.items()),
-            #          closest=closest,
-            #          temp_ids=self.temp_ids,
-            #          response=[self.pause_event, self.stop_flag, self.speed])
-            print("w.i.p.")
-        except Exception: 
-            messagebox.showerror('Erro', f'Ocorreu um erro.')
-            return self.stop()
+        closest_pair = ClosestPair(points=self.points,
+                                   closest=closest,
+                                   canvas=self.canvas,
+                                   ids=self.temp_ids,
+                                   response=[self.pause_event, self.stop_flag, self.speed])
+        #try:
+        closest_pair.start()
+        print(closest_pair.closest)
+        #except Exception: 
+        #    messagebox.showerror('Erro', f'Ocorreu um erro.')
+        #    return self.stop()
         
+        self.buttons[5][2].config(state="disabled")
         self.buttons[5][3].config(text="Finalizar")
 
 
