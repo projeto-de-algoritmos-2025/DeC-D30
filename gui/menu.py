@@ -317,6 +317,7 @@ class App():
         self.canvas.unbind("<Button-2>")
         self.canvas.unbind("<Button-3>")
 
+        self.speed = tk.IntVar(value=10)
         self.buttons[5].destroy()
         self.buttons[5] = [
             tk.Label(self.frame, text='Velocidade', font=("Arial", 7)),
@@ -330,7 +331,6 @@ class App():
         self.buttons[5][2].grid(row=4, column=2, padx=(0, 80), sticky='e')
         self.buttons[5][3].grid(row=4, column=2, padx=(0, 1), sticky='e')
 
-        self.speed = tk.IntVar(value=10)
         self.stop_flag = threading.Event()
         self.pause_event = threading.Event()
         self.pause_event.set()
@@ -370,7 +370,7 @@ class App():
 
     # Plota um ponto e seu texto no plano
     def plot(self, x, y, name):
-        canvas_x, canvas_y = (x + self.w), (self.h - y)
+        canvas_x, canvas_y = (self.w + x), (self.h - y)
         name_pos = self.name_fix(canvas_x, canvas_y)
 
         point_id = self.canvas.create_oval(canvas_x-5, canvas_y-5, canvas_x+5, canvas_y+5, fill="blue")
@@ -436,7 +436,6 @@ class App():
             print(closest_pair.closest)
         except Exception:
             messagebox.showerror('Erro', f'Ocorreu um erro.')
-            return self.stop()
 
         self.stop(temp_ids)
 

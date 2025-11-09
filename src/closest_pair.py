@@ -5,13 +5,12 @@ import time
 
 
 class ClosestPair():
+    # Método de inicialização do algoritmo
     def __init__(self, points, closest=[float('inf'), {(None, None)}], canvas=None, w=None, h=None, ids=None, response=None):
-        self.points = points
-        self.closest = closest
-        self.canvas = canvas
-        self.w, self.h = w, h
-        self.ids = ids
-        self.response = response
+        self.points, self.closest = points, closest
+        self.canvas, self.w, self.h = canvas, w, h
+        self.ids, self.response = ids, response
+
 
 
     # Retorna o nome da mediana
@@ -23,6 +22,7 @@ class ClosestPair():
         return median_name[0] # Retorna o nome do primeiro ponto "mediana" (para o caso de pontos coincidentes)
 
 
+
     # Divide um conjunto de pontos com base na mediana (l <= m < r)
     def divide(self, points, m):
         left = [point for point in points if self.points[point] <= self.points[m]]
@@ -30,37 +30,6 @@ class ClosestPair():
         
         return left, right
 
-
-    # Une dois conjuntos ordenados (merge)
-    def merge(self, left, right):
-        full, i, j = [], 0, 0
-        
-        while i < len(left) and j < len(right):
-            if self.points[left[i]][1] < self.points[right[j]][1]:
-                full.append(left[i])
-                i += 1
-            else:
-                full.append(right[j])
-                j += 1
-
-            self.ids['points'].append(self.canvas.create_oval(self.w+self.points[full[-1]][0]-5, self.h-self.points[full[-1]][1]-5,
-                                                              self.w+self.points[full[-1]][0]+5, self.h-self.points[full[-1]][1]+5, fill="orange"))
-
-            if self.checkpoint(3/self.response[2].get()): return
-
-            self.canvas.delete(self.ids['points'].pop(-1))
-
-        for point in left[i:] + right[j:]:
-            full.append(point)
-
-            self.ids['points'].append(self.canvas.create_oval(self.w+self.points[point][0]-5, self.h-self.points[point][1]-5,
-                                                              self.w+self.points[point][0]+5, self.h-self.points[point][1]+5, fill="orange"))
-
-            if self.checkpoint(3/self.response[2].get()): return
-
-            self.canvas.delete(self.ids['points'].pop(-1))
-
-        return full
 
 
     # Separa os pontos próximos (abscissa <= d) da divisa
@@ -72,105 +41,170 @@ class ClosestPair():
         return border_points
 
 
+
+    # Une dois conjuntos ordenados (merge)
+    def merge(self, left, right):
+        full, i, j = [], 0, 0
+        
+
+        while i < len(left) and j < len(right):
+            if self.points[left[i]][1] < self.points[right[j]][1]:
+                full.append(left[i])
+                i += 1
+            else:
+                full.append(right[j])
+                j += 1
+
+            if self.canvas: # Se foi passado um canvas para acompanhamento visual
+                self.plot((self.points[full[-1]][0], self.points[full[-1]][1]), color="orange")
+                if self.checkpoint(3): return
+                self.canvas.delete(self.ids['points'].pop(-1))
+
+
+        for point in left[i:] + right[j:]:
+            full.append(point)
+
+            if self.canvas: # Se foi passado um canvas para acompanhamento visual
+                self.plot((self.points[point][0], self.points[point][1]), color="orange")
+                if self.checkpoint(3): return
+                self.canvas.delete(self.ids['points'].pop(-1))
+
+
+        return full
+
+
+
     # Calcula a distância de um ponto com os 6 próximos, seguindo a ordenação de y
     def distances(self, points):
-        for i in range(len(points)):
-            for j in range(i+1, i + 7):
+        for i in range(len(points)): # Para cada ponto próximo à borda
+            for j in range(i+1, i + 7): # Compara ele com os 6 próximos
                 try: points[j]
                 except IndexError: break
+
                 d = math.sqrt((self.points[points[i]][0] - self.points[points[j]][0])**2 + \
                               (self.points[points[i]][1] - self.points[points[j]][1])**2) # Distância euclidiana
 
-                self.ids['lines'].append(self.canvas.create_line(self.w+self.points[points[i]][0], self.h-self.points[points[i]][1],
-                                                                 self.w+self.points[points[j]][0], self.h-self.points[points[j]][1],
-                                                                 width=3, fill="yellow"))
-                
-                if self.checkpoint(5/self.response[2].get()): return
+                if self.canvas: # Se foi passado um canvas para acompanhamento visual
+                    self.plot((self.points[points[i]][0], self.points[points[i]][1]),
+                              (self.points[points[j]][0], self.points[points[j]][1]),
+                              width=3, color="yellow")
+                    if self.checkpoint(5): return
 
-                if(d < self.closest[0]):
+                if(d < self.closest[0]): # Se foi encontrada uma distância menor
                     self.closest[:] = [d, {(points[i], points[j])}]
 
-                    for line in self.ids['closest']: self.canvas.delete(line)
-                    self.canvas.itemconfig(self.ids['lines'][-1], fill="green")
-                    self.ids['closest'].append(self.ids['lines'].pop(-1))
-                elif(d == self.closest[0]):
+                    if self.canvas: # Se foi passado um canvas para acompanhamento visual
+                        for line in self.ids['closest']: self.canvas.delete(line)
+                        self.canvas.itemconfig(self.ids['lines'][-1], fill="green")
+                        self.ids['closest'].append(self.ids['lines'].pop(-1))
+
+                elif(d == self.closest[0]): # Se foi encontrado um novo par de pontos com mesma menor distância
                     self.closest[1].add((points[i], points[j]))
 
-                    self.canvas.itemconfig(self.ids['lines'][-1], fill="green")
-                    self.ids['closest'].append(self.ids['lines'].pop(-1))
-                else:
+                    if self.canvas: # Se foi passado um canvas para acompanhamento visual
+                        self.canvas.itemconfig(self.ids['lines'][-1], fill="green")
+                        self.ids['closest'].append(self.ids['lines'].pop(-1))
+
+                elif self.canvas: # Se foi passado um canvas para acompanhamento visual
                     self.canvas.delete(self.ids['lines'].pop(-1))
+
 
 
     # Sequência de passos do algoritmo recursivo
     def execution(self, points):
+        if self.canvas and self.checkpoint(5): return  # Se foi passado um canvas para acompanhamento visual
 
-        if self.checkpoint(5/self.response[2].get()): return
 
-        # Condição de parada do algoritmo: left/right com tamanho nulo ou unitário
+        # 1: Condição de parada do algoritmo: left/right com tamanho nulo ou unitário
         if(len(points)==0 or len(points)==1): return points
-        
-        # Encontrar a mediana
+
+
+        # 2: Encontrar a mediana
         median = self.median(points)
-        self.ids['points'].append(self.canvas.create_oval(self.w+self.points[median][0]-5, self.h-self.points[median][1]-5,
-                                                          self.w+self.points[median][0]+5, self.h-self.points[median][1]+5, fill="red"))
 
-        if self.checkpoint(5/self.response[2].get()): return
+        if self.canvas: # Se foi passado um canvas para acompanhamento visual
+            self.plot((self.points[median][0], self.points[median][1]), color="red")
+            if self.checkpoint(5): return
+            self.canvas.delete(self.ids['points'].pop(-1))
 
-        # Dividir os pontos em torno da mediana
-        self.canvas.delete(self.ids['points'].pop(-1))
+
+        # 3: Dividir os pontos em torno da mediana
         left, right = self.divide(points, median)
-        self.ids['lines'].append(self.canvas.create_line(self.w+self.points[median][0], 0,
-                                                         self.w+self.points[median][0], 2*self.h,
-                                                         width=2, fill="red"))
 
-        # Recursão para a esquerda e direita (encontra a menor distância)
+        if self.canvas: # Se foi passado um canvas para acompanhamento visual
+            self.plot((self.points[median][0], -self.h), (self.points[median][0], +self.h), width=2, color="red")
+
+
+        # 4: Recursão para a esquerda e direita (encontra a menor distância)
         left = self.execution(left)
         right = self.execution(right)
 
-        if self.checkpoint(5/self.response[2].get()): return
+        if self.canvas and self.checkpoint(5): return  # Se foi passado um canvas para acompanhamento visual
 
-        # Faz o merge dos conjuntos
+
+        # 5: Faz o merge ordenado dos conjuntos
         points = self.merge(left, right)
 
-        if self.checkpoint(5/self.response[2].get()): return
+        if self.canvas and self.checkpoint(5): return  # Se foi passado um canvas para acompanhamento visual
 
-        # Separa os pontos próximos à borda
+
+        # 6: Separa os pontos próximos à borda
         border_points = self.border(points, median)
-        self.ids['lines'].append(self.canvas.create_line(self.w+(self.points[median][0]-self.closest[0]), 0,
-                                                         self.w+(self.points[median][0]-self.closest[0]), 2*self.h, fill="orange"))
-        self.ids['lines'].append(self.canvas.create_line(self.w+(self.points[median][0]+self.closest[0]), 0,
-                                                         self.w+(self.points[median][0]+self.closest[0]), 2*self.h, fill="orange"))
-        for point in points:
-            self.ids['points'].append(self.canvas.create_oval(self.w+self.points[point][0]-5, self.h-self.points[point][1]-5,
-                                                              self.w+self.points[point][0]+5, self.h-self.points[point][1]+5, fill="orange"))
+
+        if self.canvas: # Se foi passado um canvas para acompanhamento visual
+            self.plot((self.points[median][0]-self.closest[0], -self.h), (self.points[median][0]-self.closest[0], +self.h), color="orange")
+            self.plot((self.points[median][0]+self.closest[0], -self.h), (self.points[median][0]+self.closest[0], +self.h), color="orange")
+
+            for point in border_points:
+                self.plot((self.points[point][0], self.points[point][1]), color="orange")
+            if self.checkpoint(5): return
 
 
-        if self.checkpoint(5/self.response[2].get()): return
-
-        # Procura possíveis menores distâncias na borda, e retorna os pontos ordenados por y
+        # 7: Procura menores distâncias entre pontos próximos à borda
         self.distances(border_points)
 
-        for i in range(3):
-            self.canvas.delete(self.ids['lines'].pop(-1))
-        for i in range(len(self.ids['points'])):
-            self.canvas.delete(self.ids['points'].pop(-1))
+        if self.canvas: # Se foi passado um canvas para acompanhamento visual
+            for i in range(3):
+                self.canvas.delete(self.ids['lines'].pop(-1))
+            for i in range(len(self.ids['points'])):
+                self.canvas.delete(self.ids['points'].pop(-1))
 
+
+        # 8: Retorna os pontos left+right obtidos em (5)
         return points
     
 
+
+    # Plota linhas ou pontos no canvas (se solicitado)
+    def plot(self, p1, p2=None, width=1, color="blue"):
+        if p2:
+            line = self.canvas.create_line(self.w+p1[0], self.h-p1[1],
+                                           self.w+p2[0], self.h-p2[1],
+                                           width=width, fill=color)
+            self.ids['lines'].append(line)
+
+        else:
+            point = self.canvas.create_oval(self.w+p1[0]-5, self.h-p1[1]-5,
+                                            self.w+p1[0]+5, self.h-p1[1]+5,
+                                            width=width, fill="red")
+            self.ids['points'].append(point)
+
+
+
+    # Checkpoint da thread: tempo de espera + se foi pausada ou encerrada
     def checkpoint(self, sleep):
-        time.sleep(sleep)
-        self.response[0].wait()
-        if self.response[1].is_set(): return True
+        time.sleep(sleep/self.response[2].get()) # Tempo de espera (para acompanhamento visual)
+        self.response[0].wait() # Pausa a thread quando a flag for ativa
+        if self.response[1].is_set(): return True # Encerra a thread recursivamente
+
 
 
     # Inicia o algoritmo
     def start(self):
-        self.execution(self.points.keys())
+        self.execution(self.points.keys()) # Obs: o algoritmo trabalha recursivamente com os nomes dos pontos
 
 
-# Teste rápido do algoritmo
+# Teste do algoritmo
 '''
 import json
 
