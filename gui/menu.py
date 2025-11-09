@@ -4,7 +4,6 @@ import tkinter as tk
 import threading
 import random
 import json
-import time
 import os
 
 
@@ -62,7 +61,6 @@ class App():
         self.db_path = db_path
         self.w, self.h, self.g = int(w/2), int(h/2), g
         self.max = max
-        self.speed = tk.IntVar(value=5)
         self.points, self.ids = {}, {}
 
         self.frame = tk.Frame(self.root, padx=15, pady=10)
@@ -238,7 +236,8 @@ class App():
                 if not listbox.curselection():
                     messagebox.showwarning('Seleção Vazia', f'Nenhum ponto foi selecionado!', parent=win)
                     return
-                if not messagebox.askyesno("Apagar?", f"Deseja apagar o(s) ponto(s) selecionado(s)?", parent=win):
+                if not messagebox.askyesno("Apagar?", f"Deseja apagar ({len(listbox.curselection())}) " \
+                                           "ponto(s) selecionado(s)?", parent=win):
                     return
                 
                 removing = [listbox.get(i) for i in listbox.curselection()]
@@ -256,35 +255,6 @@ class App():
             tk.Button(frame, text="Voltar", width=10, command=win.destroy).grid(row=2, column=1, sticky='se')
 
             refresh_points()
-
-
-    def on_start(self):
-        for button in self.buttons:
-            button.config(state="disabled")
-
-        self.canvas.unbind("<Button-1>")
-        self.canvas.unbind("<Button-2>")
-        self.canvas.unbind("<Button-3>")
-
-        self.buttons[5].destroy()
-        self.buttons[5] = [
-            tk.Label(self.frame, text='Velocidade', font=("Arial", 7)),
-            tk.Spinbox(self.frame, from_=0, to=10, textvariable=self.speed, state="normal", width=9),
-            tk.Button(self.frame, text="Pausar", width=9, command=self.pause),
-            tk.Button(self.frame, text="Interromper", width=9, command=self.stop)
-        ]
-
-        self.buttons[5][0].grid(row=4, column=2, padx=(0, 169), sticky='ne')
-        self.buttons[5][1].grid(row=4, column=2, padx=(0, 159), sticky='se')
-        self.buttons[5][2].grid(row=4, column=2, padx=(0, 80), sticky='e')
-        self.buttons[5][3].grid(row=4, column=2, padx=(0, 1), sticky='e')
-
-        self.pause_event = threading.Event()
-        self.pause_event.set()
-        self.stop_flag = False
-        
-        self.execution = threading.Thread(target=self.start)
-        self.execution.start()
 
 
     def on_gen(self):
@@ -337,6 +307,54 @@ class App():
             messagebox.showerror('Aviso', f'Não foi possível carregar "{self.db_path}".')
             return
         
+
+    # Prepara a interface gráfica para a execução do algoritmo
+    def on_start(self):
+        for button in self.buttons:
+            button.config(state="disabled")
+
+        self.canvas.unbind("<Button-1>")
+        self.canvas.unbind("<Button-2>")
+        self.canvas.unbind("<Button-3>")
+
+        self.buttons[5].destroy()
+        self.buttons[5] = [
+            tk.Label(self.frame, text='Velocidade', font=("Arial", 7)),
+            tk.Spinbox(self.frame, from_=1, to=20, textvariable=self.speed, state="normal", width=9),
+            tk.Button(self.frame, text="Pausar", width=9, command=self.on_pause),
+            tk.Button(self.frame, text="Interromper", width=9, command=self.on_stop)
+        ]
+
+        self.buttons[5][0].grid(row=4, column=2, padx=(0, 169), sticky='ne')
+        self.buttons[5][1].grid(row=4, column=2, padx=(0, 159), sticky='se')
+        self.buttons[5][2].grid(row=4, column=2, padx=(0, 80), sticky='e')
+        self.buttons[5][3].grid(row=4, column=2, padx=(0, 1), sticky='e')
+
+        self.speed = tk.IntVar(value=10)
+        self.stop_flag = threading.Event()
+        self.pause_event = threading.Event()
+        self.pause_event.set()
+        
+        self.execution = threading.Thread(target=self.start)
+        self.execution.start()
+
+
+    # Pausa a thread de execução do algoritmo
+    def on_pause(self):
+            if self.pause_event.is_set():
+                self.pause_event.clear()
+                self.buttons[5][2].config(text="Despausar")
+            else:
+                self.pause_event.set()
+                self.buttons[5][2].config(text="Pausar")
+
+
+    # Interrompe o algoritmo (utilizando a flag de parada)
+    def on_stop(self):
+        self.stop_flag.set()
+        self.pause_event.set()
+        self.speed.set(20)
+
 
     # Gera um nome "default" para um ponto
     def default_name(self, i = 1):
@@ -402,46 +420,36 @@ class App():
                 return point[0]
 
 
+    # Thread de execução do algoritmo
     def start(self):
         closest = [float('inf'), {(None, None)}]
-        self.temp_ids = {
-            "points": [],
-            "lines": [],
-            "closest": []
-        }
+        temp_ids = {"points": [], "lines": [], "closest": []}
+
         closest_pair = ClosestPair(points=self.points,
                                    closest=closest,
                                    canvas=self.canvas,
-                                   ids=self.temp_ids,
+                                   w=self.w, h=self.h,
+                                   ids=temp_ids,
                                    response=[self.pause_event, self.stop_flag, self.speed])
-        #try:
-        closest_pair.start()
-        print(closest_pair.closest)
-        #except Exception: 
-        #    messagebox.showerror('Erro', f'Ocorreu um erro.')
-        #    return self.stop()
-        
+        try:
+            closest_pair.start()
+            print(closest_pair.closest)
+        except Exception:
+            messagebox.showerror('Erro', f'Ocorreu um erro.')
+            return self.stop()
+
+        self.stop(temp_ids)
+
+
+    # Encerra e execução do algoritmo, resetando os elementos gráficos
+    def stop(self, temp_ids):
         self.buttons[5][2].config(state="disabled")
         self.buttons[5][3].config(text="Finalizar")
+        self.stop_flag.wait()
 
-
-    def pause(self):
-        if self.pause_event.is_set():
-            self.pause_event.clear()
-            self.buttons[5][2].config(text="Despausar")
-        else:
-            self.pause_event.set()
-            self.buttons[5][2].config(text="Pausar")
-
-
-    def stop(self):
-        self.stop_flag = True
-        self.pause_event.set()
-        time.sleep(0.4)
-
-        for key in self.temp_ids.keys():
-            for element in self.temp_ids[key]:
-                element.destroy()
+        for key in temp_ids.keys():
+            for id in temp_ids[key]:
+                self.canvas.delete(id)
 
         for element in self.buttons[5]:
             element.destroy()
