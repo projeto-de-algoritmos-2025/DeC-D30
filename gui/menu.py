@@ -51,24 +51,25 @@ class Main():
             App(self.root, db_path, width, height, grid, max)
             self.frame.destroy()
         except Exception:
-            return not messagebox.showerror('Erro', f'Ocorreu um erro.')
+            messagebox.showerror('Erro', f'Ocorreu um erro.')
+            return
 
 
 
 class App():
     def __init__(self, root, db_path, w=1000, h=600, g=50, max=1000):
         self.root = root
-        self.db_path = db_path
+        self.db_path, self.max = db_path, max
         self.w, self.h, self.g = int(w/2), int(h/2), g
-        self.max = max
         self.points, self.ids = {}, {}
+        self.closest = [float('inf'), {(None, None)}]
 
-        self.frame = tk.Frame(self.root, padx=15, pady=10)
+        self.frame = tk.Frame(self.root, bg="lightblue", padx=15, pady=10)
         self.frame.pack()
         
         # Plota o canvas e linhas/textos de referência
         self.canvas = tk.Canvas(self.frame, background='white', width=2*self.w, height=2*self.h)
-        self.canvas.grid(row=1, column=0, columnspan=3, rowspan=3)
+        self.canvas.grid(row=1, column=0, rowspan=3, columnspan=3, pady=10)
         self.canvas.create_line(0, self.h, 2*self.w, self.h, arrow=tk.LAST, width=2) # Eixo X
         self.canvas.create_line(self.w, 0, self.w, 2*self.h, arrow=tk.FIRST, width=2) # Eixo Y
         self.canvas.create_text(self.w-11, self.h+7, text='0,0', font=("Arial", 10)) # Marcação da origem
@@ -90,9 +91,19 @@ class App():
         self.canvas.bind("<Button-1>", self.on_add)
         self.canvas.bind("<Button-2>", self.on_edit)
         self.canvas.bind("<Button-3>", self.on_rem)
-        
+
         # Demais elementos da interface
-        title = tk.Label(self.frame, text='idk')
+        title = tk.Label(self.frame, text='Visualização Interativa: Par de Pontos Mais Próximo',
+                         bg="lightblue", font=('sylfaen', 15, "italic"))
+        self.screen = [
+            tk.Canvas(self.frame, height=96, background='lightgray'),
+            tk.Label(self.frame, text=f'N° de Pontos: {len(self.points)}',
+                     bg="lightgray", font=('Cambria', 10)),
+            tk.Label(self.frame, text=f'Menor Distância:  {self.closest[0]:.4f}\nPontos: {str(self.closest[1])[1:-1]}',
+                     bg="lightgray", font=('Cambria', 10)),
+            tk.Label(self.frame, text='Clique em "Iniciar Algoritmo" para executar o algoritmo.',
+                     bg="lightgray", font=('Bahnschrift SemiBold SemiConden', 12))
+        ]
         self.buttons = [
             tk.Button(self.frame, text="Adicionar Ponto", width=15, command=self.on_add),
             tk.Button(self.frame, text="Remover Ponto(s)", width=15, command=self.on_rem),
@@ -100,11 +111,15 @@ class App():
             tk.Button(self.frame, text="Salvar em JSON", width=15, command=self.on_save),
             tk.Button(self.frame, text="Carregar JSON", width=15, command=self.on_load),
             tk.Button(self.frame, text="Iniciar Algoritmo", width=31, command=self.on_start),
-            tk.Button(self.frame, text="Sair", width=31, command=self.root.destroy)
+            tk.Button(self.frame, text="Sair", width=31, command=self.root.destroy),
         ]
 
         # Ajuste dos elementos no grid
         title.grid(row=0, column=1, sticky='n')
+        self.screen[0].grid(row=4, column=1, rowspan=3, sticky="we")
+        self.screen[1].grid(row=6, column=1, padx=4, sticky="w")
+        self.screen[2].grid(row=5, column=1, padx=4, pady=(0, 7), rowspan=2, sticky="se")
+        self.screen[3].grid(row=4, column=1, rowspan=2)
         self.buttons[0].grid(row=4, column=0, pady=5, sticky='w')
         self.buttons[1].grid(row=4, column=0, padx=(114, 0), pady=5, sticky='w')
         self.buttons[2].grid(row=5, column=0, padx=(1, 0), pady=5, sticky='w')
@@ -193,6 +208,7 @@ class App():
         point_id, text_id = self.plot(x, y, new_name)
         self.points[new_name], self.ids[new_name] = [x, y], [point_id, text_id]
 
+        self.screen[1].config(text=f'N° de Pontos: {len(self.points)}')
         win.destroy()
         #messagebox.showinfo(f'Ponto {string}', f'O ponto "{new_name}" foi {string} no plano.')
 
@@ -203,6 +219,7 @@ class App():
         if click:
             self.canvas.delete(self.ids[click][0]), self.canvas.delete(self.ids[click][1])
             del self.points[click], self.ids[click]
+            self.screen[1].config(text=f'N° de Pontos: {len(self.points)}')
         elif not event:
             win = tk.Toplevel(self.root)
             win.title(f"Remover Ponto(s)")
@@ -245,8 +262,9 @@ class App():
                     self.canvas.delete(self.ids[point][0]), self.canvas.delete(self.ids[point][1])
                     del self.points[point], self.ids[point]
 
-                messagebox.showinfo('Pontos Apagados', f'Os pontos selecionados foram apagados.', parent=win)
                 refresh_points()
+                self.screen[1].config(text=f'N° de Pontos: {len(self.points)}')
+                messagebox.showinfo('Pontos Apagados', f'Os pontos selecionados foram apagados.', parent=win)
 
             tk.Label(frame, text='Selecione o(s) ponto(s)\npara remoção:').grid(row=0, column=0, columnspan=2)
             tk.Button(frame, text="A", font=("Arial", 8), width=1, height=1, command=alph_order).place(x=1, y=28, width=14, height=14)
@@ -279,6 +297,7 @@ class App():
             self.points[name] = [x, y]
             self.ids[name] = [point_id, text_id]
 
+        self.screen[1].config(text=f'N° de Pontos: {len(self.points)}')
         if n==1: messagebox.showinfo('Ponto Gerado', f'{n} novo ponto foi gerado no plano.')
         else: messagebox.showinfo('Pontos Gerados', f'{n} novos pontos foram gerados no plano.')
 
@@ -301,6 +320,8 @@ class App():
             for point in self.points.items():
                 point_id, text_id = self.plot(point[1][0], point[1][1], point[0])
                 self.ids[point[0]] = [point_id, text_id]
+
+            self.screen[1].config(text=f'N° de Pontos: {len(self.points)}')
             messagebox.showinfo('Carregamento concluído', f'Os pontos foram carregados no plano!')
 
         except Exception:
@@ -310,6 +331,10 @@ class App():
 
     # Prepara a interface gráfica para a execução do algoritmo
     def on_start(self):
+        if len(self.points)==0 or len(self.points)==1:
+            messagebox.showwarning('Erro', f'O plano deve ter no mínimo 2 pontos para a execução do algoritmo!')
+            return
+
         for button in self.buttons:
             button.config(state="disabled")
 
@@ -320,7 +345,7 @@ class App():
         self.speed = tk.IntVar(value=10)
         self.buttons[5].destroy()
         self.buttons[5] = [
-            tk.Label(self.frame, text='Velocidade', font=("Arial", 7)),
+            tk.Label(self.frame, text='Velocidade', bg="lightblue", font=("Arial", 7)),
             tk.Spinbox(self.frame, from_=1, to=20, textvariable=self.speed, state="normal", width=9),
             tk.Button(self.frame, text="Pausar", width=9, command=self.on_pause),
             tk.Button(self.frame, text="Interromper", width=9, command=self.on_stop)
@@ -422,21 +447,19 @@ class App():
 
     # Thread de execução do algoritmo
     def start(self):
-        closest = [float('inf'), {(None, None)}]
+        self.closest[:] = [float('inf'), {(None, None)}]
+        self.screen[2].config(text=f'Menor Distância:  {self.closest[0]:.4f}\nPontos: {str(self.closest[1])[1:-1]}')
         temp_ids = {"points": [], "lines": [], "closest": []}
 
         closest_pair = ClosestPair(points=self.points,
-                                   closest=closest,
+                                   closest=self.closest,
                                    canvas=self.canvas,
                                    w=self.w, h=self.h,
-                                   ids=temp_ids,
+                                   screen=self.screen, ids=temp_ids,
                                    response=[self.pause_event, self.stop_flag, self.speed])
-        try:
-            closest_pair.start()
-            print(closest_pair.closest)
-        except Exception:
-            messagebox.showerror('Erro', f'Ocorreu um erro.')
-
+        
+        try: closest_pair.start()
+        except Exception: messagebox.showerror('Erro', f'Ocorreu um erro.')
         self.stop(temp_ids)
 
 

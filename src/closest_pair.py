@@ -6,10 +6,12 @@ import time
 
 class ClosestPair():
     # Método de inicialização do algoritmo
-    def __init__(self, points, closest=[float('inf'), {(None, None)}], canvas=None, w=None, h=None, ids=None, response=None):
+    def __init__(self, points, closest=[float('inf'), {(None, None)}],
+                 canvas=None, w=None, h=None, screen=None, ids=None, response=None):
+        
         self.points, self.closest = points, closest
         self.canvas, self.w, self.h = canvas, w, h
-        self.ids, self.response = ids, response
+        self.screen, self.ids, self.response = screen, ids, response
 
 
 
@@ -18,7 +20,7 @@ class ClosestPair():
         points = [tuple(self.points[point]) for point in names] # Obtém os pontos
         median = median_of_medians(points) # Obtém o ponto cuja abscissa é mediana
 
-        median_name = [point for point in names if self.points[point] == list(median)] # Separa nomes de pontos "mediana"
+        median_name = [point for point in names if self.points[point] == list(median)] # Separa pontos "mediana"
         return median_name[0] # Retorna o nome do primeiro ponto "mediana" (para o caso de pontos coincidentes)
 
 
@@ -97,6 +99,8 @@ class ClosestPair():
                         for line in self.ids['closest']: self.canvas.delete(line)
                         self.canvas.itemconfig(self.ids['lines'][-1], fill="green")
                         self.ids['closest'].append(self.ids['lines'].pop(-1))
+                        self.screen[2].config(text=f'Menor Distância:  {self.closest[0]:.4f}' \
+                                                   f'\nPontos: {str(self.closest[1])[1:-1]}') # Atualiza o texto
 
                 elif(d == self.closest[0]): # Se foi encontrado um novo par de pontos com mesma menor distância
                     self.closest[1].add((points[i], points[j]))
@@ -104,6 +108,8 @@ class ClosestPair():
                     if self.canvas: # Se foi passado um canvas para acompanhamento visual
                         self.canvas.itemconfig(self.ids['lines'][-1], fill="green")
                         self.ids['closest'].append(self.ids['lines'].pop(-1))
+                        self.screen[2].config(text=f'Menor Distância:  {self.closest[0]:.4f}' \
+                                                   f'\nPontos: {str(self.closest[1])[1:-1]}') # Atualiza o texto
 
                 elif self.canvas: # Se foi passado um canvas para acompanhamento visual
                     self.canvas.delete(self.ids['lines'].pop(-1))
@@ -152,8 +158,10 @@ class ClosestPair():
         border_points = self.border(points, median)
 
         if self.canvas: # Se foi passado um canvas para acompanhamento visual
-            self.plot((self.points[median][0]-self.closest[0], -self.h), (self.points[median][0]-self.closest[0], +self.h), color="orange")
-            self.plot((self.points[median][0]+self.closest[0], -self.h), (self.points[median][0]+self.closest[0], +self.h), color="orange")
+            self.plot((self.points[median][0]-self.closest[0], -self.h),
+                      (self.points[median][0]-self.closest[0], +self.h), color="orange")
+            self.plot((self.points[median][0]+self.closest[0], -self.h),
+                      (self.points[median][0]+self.closest[0], +self.h), color="orange")
 
             for point in border_points:
                 self.plot((self.points[point][0], self.points[point][1]), color="orange")
