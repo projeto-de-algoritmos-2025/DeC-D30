@@ -75,12 +75,12 @@ class App():
         self.canvas.create_text(self.w-11, self.h+7, text='0,0', font=("Arial", 10)) # Marcação da origem
         self.canvas.create_text(self.w+10, 10, text=f'X', font=("Arial", 10, "bold")) # Marcação do eixo X
         self.canvas.create_text(2*self.w-8, self.h-10, text=f'Y', font=("Arial", 10, "bold")) # Marcação do eixo Y
-        self.canvas.create_text(self.w-11, self.h+1-self.g, text=f'+{g}', font=("Arial", 8)) # Referência do grid (X)
-        self.canvas.create_text(self.w-3+self.g, self.h+7, text=f'+{g}', font=("Arial", 8)) # Referência do grid (Y)
-        self.canvas.create_text(2*self.w-12, self.h+10, text=f'+{int(w)}', font=("Arial", 8)) # X máximo
-        self.canvas.create_text(14, self.h+10, text=f'-{int(w)}', font=("Arial", 8)) # X mínimo
-        self.canvas.create_text(self.w-16, 8, text=f'+{int(h)}', font=("Arial", 8)) # Y máximo
-        self.canvas.create_text(self.w-16, 2*self.h-5, text=f'-{int(h)}', font=("Arial", 8)) # Y mínimo
+        self.canvas.create_text(self.w-11, self.h+1-self.g, text=f'+{self.g}', font=("Arial", 8)) # Referência do grid (X)
+        self.canvas.create_text(self.w-3+self.g, self.h+7, text=f'+{self.g}', font=("Arial", 8)) # Referência do grid (Y)
+        self.canvas.create_text(2*self.w-12, self.h+10, text=f'+{self.w}', font=("Arial", 8)) # X máximo
+        self.canvas.create_text(14, self.h+10, text=f'-{self.w}', font=("Arial", 8)) # X mínimo
+        self.canvas.create_text(self.w-16, 8, text=f'+{self.h}', font=("Arial", 8)) # Y máximo
+        self.canvas.create_text(self.w-16, 2*self.h-5, text=f'-{self.h}', font=("Arial", 8)) # Y mínimo
 
         for x in range(0, 2*self.w, self.g):
             self.canvas.create_line(x, 0, x, 2*self.h, fill="gray", dash=(2, 2)) # Plota grids verticais
@@ -193,8 +193,8 @@ class App():
 
     def add_point(self, x, y, new_name, old_name, win):
         if not self.verify_point(x, y, new_name, old_name, win): return
-        x, y = float(x), float(y)
 
+        x, y = float(x), float(y)
         if x.is_integer(): x = int(x) # Elimina casas decimais se for um int
         if y.is_integer(): y = int(y) # Elimina casas decimais se for um int
 
@@ -284,18 +284,16 @@ class App():
             messagebox.showerror('Erro', f'Número máximo de pontos ({self.max}) estourado!')
             return
 
-        points = self.points.values()
-        for i in range(n):            
-            while True:
-                x = random.randint(-self.w, self.w)
-                y = random.randint(-self.h, self.h)
-                if not self.check_conflict(x, y): break
-
-            name = self.default_name()
-            point_id, text_id = self.plot(x, y, name)
-            
-            self.points[name] = [x, y]
-            self.ids[name] = [point_id, text_id]
+        while n:
+            x = random.randint(-self.w, self.w)
+            y = random.randint(-self.h, self.h)
+            if not self.check_conflict(x, y):
+                name = self.default_name()
+                point_id, text_id = self.plot(x, y, name)
+                
+                self.points[name] = [x, y]
+                self.ids[name] = [point_id, text_id]
+                n -= 1
 
         self.screen[1].config(text=f'N° de Pontos: {len(self.points)}')
         if n==1: messagebox.showinfo('Ponto Gerado', f'{n} novo ponto foi gerado no plano.')
@@ -412,7 +410,7 @@ class App():
 
         if self.check_conflict(x, y, old_name):
             messagebox.showwarning('Erro', f'O ponto ({x}, {y}) já existe no plano.', parent=win)
-        elif (-self.w > x > self.w) or (-self.h > y > self.h):
+        elif (-self.w > x) or (x > self.w) or (-self.h > y) or (y > self.h):
             messagebox.showwarning('Erro', f'As coordenadas ({x}, {y}) estão fora do limite do plano.', parent=win)
         elif (name in self.points.keys()) and (name!=old_name):
             messagebox.showwarning('Erro', f'Já existe um ponto com o nome "{name}".', parent=win)
