@@ -64,7 +64,7 @@ class App():
         self.points, self.ids = {}, {}
         self.closest = [float('inf'), {(None, None)}]
 
-        self.frame = tk.Frame(self.root, bg="lightblue", padx=15, pady=10)
+        self.frame = tk.Frame(self.root, padx=15, pady=10)
         self.frame.pack()
         
         # Plota o canvas e linhas/textos de referência
@@ -94,7 +94,7 @@ class App():
 
         # Demais elementos da interface
         title = tk.Label(self.frame, text='Visualização Interativa: Par de Pontos Mais Próximo',
-                         bg="lightblue", font=('sylfaen', 15, "italic"))
+                         font=('sylfaen', 15, "italic"))
         self.screen = [
             tk.Canvas(self.frame, height=96, background='lightgray'),
             tk.Label(self.frame, text=f'N° de Pontos: {len(self.points)}',
@@ -345,7 +345,7 @@ class App():
         self.speed = tk.IntVar(value=10)
         self.buttons[5].destroy()
         self.buttons[5] = [
-            tk.Label(self.frame, text='Velocidade', bg="lightblue", font=("Arial", 7)),
+            tk.Label(self.frame, text='Velocidade', font=("Arial", 7)),
             tk.Spinbox(self.frame, from_=1, to=20, textvariable=self.speed, state="normal", width=9),
             tk.Button(self.frame, text="Pausar", width=9, command=self.on_pause),
             tk.Button(self.frame, text="Interromper", width=9, command=self.on_stop)

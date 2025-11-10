@@ -59,7 +59,7 @@ class ClosestPair():
 
             if self.canvas: # Se foi passado um canvas para acompanhamento visual
                 self.plot((self.points[full[-1]][0], self.points[full[-1]][1]), color="orange")
-                if self.checkpoint(3): return
+                if self.checkpoint(7): return
                 self.canvas.delete(self.ids['points'].pop(-1))
 
 
@@ -68,7 +68,7 @@ class ClosestPair():
 
             if self.canvas: # Se foi passado um canvas para acompanhamento visual
                 self.plot((self.points[point][0], self.points[point][1]), color="orange")
-                if self.checkpoint(3): return
+                if self.checkpoint(7): return
                 self.canvas.delete(self.ids['points'].pop(-1))
 
 
@@ -90,7 +90,7 @@ class ClosestPair():
                     self.plot((self.points[points[i]][0], self.points[points[i]][1]),
                               (self.points[points[j]][0], self.points[points[j]][1]),
                               width=3, color="yellow")
-                    if self.checkpoint(5): return
+                    if self.checkpoint(13): return
 
                 if(d < self.closest[0]): # Se foi encontrada uma distância menor
                     self.closest[:] = [d, {(points[i], points[j])}]
@@ -118,7 +118,7 @@ class ClosestPair():
 
     # Sequência de passos do algoritmo recursivo
     def execution(self, points):
-        if self.canvas and self.checkpoint(5): return  # Se foi passado um canvas para acompanhamento visual
+        if self.canvas and self.checkpoint(9): return  # Se foi passado um canvas para acompanhamento visual
 
 
         # 1: Condição de parada do algoritmo: left/right com tamanho nulo ou unitário
@@ -130,7 +130,7 @@ class ClosestPair():
 
         if self.canvas: # Se foi passado um canvas para acompanhamento visual
             self.plot((self.points[median][0], self.points[median][1]), color="red")
-            if self.checkpoint(5): return
+            if self.checkpoint(13): return
             self.canvas.delete(self.ids['points'].pop(-1))
 
 
@@ -145,13 +145,13 @@ class ClosestPair():
         left = self.execution(left)
         right = self.execution(right)
 
-        if self.canvas and self.checkpoint(5): return  # Se foi passado um canvas para acompanhamento visual
+        if self.canvas and self.checkpoint(13): return  # Se foi passado um canvas para acompanhamento visual
 
 
         # 5: Faz o merge ordenado dos conjuntos
         points = self.merge(left, right)
 
-        if self.canvas and self.checkpoint(5): return  # Se foi passado um canvas para acompanhamento visual
+        if self.canvas and self.checkpoint(13): return  # Se foi passado um canvas para acompanhamento visual
 
 
         # 6: Separa os pontos próximos à borda
@@ -165,7 +165,7 @@ class ClosestPair():
 
             for point in border_points:
                 self.plot((self.points[point][0], self.points[point][1]), color="orange")
-            if self.checkpoint(5): return
+            if self.checkpoint(13): return
 
 
         # 7: Procura menores distâncias entre pontos próximos à borda
@@ -201,7 +201,7 @@ class ClosestPair():
 
     # Checkpoint da thread: tempo de espera + se foi pausada ou encerrada
     def checkpoint(self, sleep):
-        time.sleep(sleep/self.response[2].get()) # Tempo de espera (para acompanhamento visual)
+        time.sleep(sleep/(self.response[2].get()**1.4)) # Tempo de espera (para acompanhamento visual)
         self.response[0].wait() # Pausa a thread quando a flag for ativa
         if self.response[1].is_set(): return True # Encerra a thread recursivamente
 
