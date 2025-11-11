@@ -296,8 +296,7 @@ class App():
                 n -= 1
 
         self.screen[1].config(text=f'N° de Pontos: {len(self.points)}')
-        if n==1: messagebox.showinfo('Ponto Gerado', f'{n} novo ponto foi gerado no plano.')
-        else: messagebox.showinfo('Pontos Gerados', f'{n} novos pontos foram gerados no plano.')
+        messagebox.showinfo('Pontos Gerados', f'Novos pontos gerados com sucesso!')
 
 
     def on_save(self):
@@ -463,6 +462,8 @@ class App():
 
     # Encerra e execução do algoritmo, resetando os elementos gráficos
     def stop(self, temp_ids):
+        self.screen[3].config(text=f'Algoritmo finalizado! Menor Distância: {self.closest[0]:.2f}\n' \
+                                    'Pressione "Finalizar" para encerrar a execução.')
         self.buttons[5][2].config(state="disabled")
         self.buttons[5][3].config(text="Finalizar")
         self.stop_flag.wait()
@@ -474,6 +475,7 @@ class App():
         for element in self.buttons[5]:
             element.destroy()
 
+        self.screen[3].config(text='Clique em "Iniciar Algoritmo" para executar o algoritmo.')
         self.buttons[5] = tk.Button(self.frame, text="Iniciar Algoritmo", width=31, command=self.on_start)
         self.buttons[5].grid(row=4, column=2, pady=5, sticky='e')
 

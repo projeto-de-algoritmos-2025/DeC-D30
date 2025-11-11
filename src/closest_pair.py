@@ -11,7 +11,7 @@ class ClosestPair():
         
         self.points, self.closest = points, closest
         self.canvas, self.w, self.h = canvas, w, h
-        self.screen, self.ids, self.response = screen, ids, response
+        self.screen, self.ids, self.response, self.progress = screen, ids, response, 1
 
 
 
@@ -118,9 +118,6 @@ class ClosestPair():
 
     # Sequência de passos do algoritmo recursivo
     def execution(self, points):
-        if self.canvas and self.checkpoint(9): return  # Se foi passado um canvas para acompanhamento visual
-
-
         # 1: Condição de parada do algoritmo: left/right com tamanho nulo ou unitário
         if(len(points)==0 or len(points)==1): return points
 
@@ -129,6 +126,7 @@ class ClosestPair():
         median = self.median(points)
 
         if self.canvas: # Se foi passado um canvas para acompanhamento visual
+            self.screen[3].config(text=f'{self.step()}Encontrar a mediana de X')
             self.plot((self.points[median][0], self.points[median][1]), color="red")
             if self.checkpoint(13): return
             self.canvas.delete(self.ids['points'].pop(-1))
@@ -138,17 +136,26 @@ class ClosestPair():
         left, right = self.divide(points, median)
 
         if self.canvas: # Se foi passado um canvas para acompanhamento visual
+            self.screen[3].config(text=f'{self.step()}Dividir os pontos na mediana')
             self.plot((self.points[median][0], -self.h), (self.points[median][0], +self.h), width=2, color="red")
 
 
         # 4: Recursão para a esquerda e direita (encontra a menor distância)
+        if self.canvas:
+            self.screen[3].config(text=f'{self.step()}Recursão (lado esquerdo)')
+            if self.checkpoint(9): return
         left = self.execution(left)
+        
+        if self.canvas:
+            self.screen[3].config(text=f'{self.step()}Recursão (lado direito)')
+            if self.checkpoint(9): return
         right = self.execution(right)
-
-        if self.canvas and self.checkpoint(13): return  # Se foi passado um canvas para acompanhamento visual
 
 
         # 5: Faz o merge ordenado dos conjuntos
+        if self.canvas:
+            self.screen[3].config(text=f'{self.step()}Merge (ordenação) dos pontos')
+            if self.checkpoint(13): return  # Se foi passado um canvas para acompanhamento visual
         points = self.merge(left, right)
 
         if self.canvas and self.checkpoint(13): return  # Se foi passado um canvas para acompanhamento visual
@@ -159,12 +166,14 @@ class ClosestPair():
 
         if self.canvas: # Se foi passado um canvas para acompanhamento visual
             self.plot((self.points[median][0]-self.closest[0], -self.h),
-                      (self.points[median][0]-self.closest[0], +self.h), color="orange")
+                      (self.points[median][0]-self.closest[0], +self.h), width=3, color="orange")
             self.plot((self.points[median][0]+self.closest[0], -self.h),
-                      (self.points[median][0]+self.closest[0], +self.h), color="orange")
+                      (self.points[median][0]+self.closest[0], +self.h), width=3, color="orange")
 
             for point in border_points:
                 self.plot((self.points[point][0], self.points[point][1]), color="orange")
+
+            self.screen[3].config(text=f'{self.step()}Análise dos pontos próximos a borda')
             if self.checkpoint(13): return
 
 
@@ -205,6 +214,11 @@ class ClosestPair():
         self.response[0].wait() # Pausa a thread quando a flag for ativa
         if self.response[1].is_set(): return True # Encerra a thread recursivamente
 
+
+    # Acompanhamento do progresso do algoritmo
+    def step(self):
+        self.progress += 1
+        return f'Etapa {self.progress}/{len(self.points)*6-5}: '
 
 
     # Inicia o algoritmo
